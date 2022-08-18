@@ -1,13 +1,19 @@
 package net.harutiro.jetpackcomposedynamicaddition
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,17 +27,24 @@ data class Hello (
     var str :String
         )
 
+
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalFoundationApi::class)
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        val intent = Intent(this,MainActivity4::class.java)
+//        startActivity(intent)
+
         setContent {
             JetpackComposeDynamicAdditionTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var names = mutableStateListOf<Hello>()
+                    val names = remember { mutableStateListOf<Hello>() }
+
                     var count = 0
 
                     Column() {
@@ -55,17 +68,64 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Text("呼び出し")
                         }
+//
+//                        AdditionalReadableItems(
+//                            names = names,
+//                            get = { name , str , index ->
+//                                names[index] = Hello(index.toString(),str)
+//                            },
+//                            deleted = { name ->
+//                                names.remove(name)
+//                            }
+//                        )
 
-                        AdditionalReadableItems(
-                            names = names,
-                            get = { name , str , index ->
-                                names -= name
-                                names.add(index ,Hello(index.toString(),str))
-                            },
-                            deleted = { name ->
-                                names -= name
+                        LazyColumn(modifier = Modifier.padding(vertical = 4.dp)) {
+
+                            itemsIndexed(
+                                items = names,
+                                key = {index ,i ->
+                                    i.index
+                                }
+
+                            ) { index , name ->
+
+                                AnimatedVisibility(
+                                    modifier = Modifier.animateItemPlacement(),
+                                    visible = names.contains(name),
+                                    enter = fadeIn(),
+                                    exit = fadeOut(),
+                                ) {
+                                    Row() {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ){
+
+                                            var text by remember { mutableStateOf("") }
+
+                                            OutlinedTextField(
+                                                value = text,
+                                                onValueChange = {
+                                                    text = it
+                                                    names[index] = Hello(name.index , it)
+                                                },
+                                                label = { Text(text = "名前") },
+                                                placeholder = { Text(text = "名前を入力してください") },
+                                                singleLine = true,
+                                            )
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                names.remove(name)
+                                            }
+                                        ){
+                                            Text("delete")
+                                        }
+                                    }
+                                }
+
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -74,39 +134,4 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@SuppressLint("UnrememberedMutableState")
-@Composable
-fun AdditionalReadableItems(names: List<Hello>,get:(Hello,String,Int) -> Unit ,deleted:(Hello) -> Unit) {
 
-    LazyColumn(modifier = Modifier.padding(vertical = 4.dp)) {
-        items(items = names) { name ->
-
-            Row() {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
-                    var text by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = {
-                            text = it
-                            get(name,it,name.index.toInt())
-                                        },
-                        label = { Text(text = "名前") },
-                        placeholder = { Text(text = "名前を入力してください") },
-                        singleLine = true,
-                    )
-
-                }
-
-                Button(
-                    onClick = {
-                        deleted(name)
-                    }
-                ){
-                    Text("delete")
-                }
-            }
-        }
-    }
-}
