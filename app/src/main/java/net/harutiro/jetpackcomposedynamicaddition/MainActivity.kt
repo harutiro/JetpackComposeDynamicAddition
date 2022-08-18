@@ -50,7 +50,12 @@ class MainActivity : ComponentActivity() {
                     Column() {
                         Button(
                             onClick = {
-                                names.add(Hello(count.toString(),""))
+                                if(names.size > 0){
+                                    names.add(names.size - 1,Hello(count.toString(),""))
+                                }else {
+                                    names.add(Hello(count.toString(),""))
+
+                                }
                                 count++
                             }
                         ) {
